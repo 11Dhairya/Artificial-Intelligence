@@ -1,0 +1,469 @@
+NIM GAME - MINIMAX
+
+def minimax(state, max_turn):
+    if state == 0:
+        return 1 if max_turn else -1
+
+    possible_new_states = [
+        state - take for take in (1, 2, 3) if take <= state
+    ]
+    if max_turn:
+        scores = [
+            minimax(new_state, max_turn=False)
+            for new_state in possible_new_states
+        ]
+        return max(scores)
+    else:
+        scores = [
+            minimax(new_state, max_turn=True)
+            for new_state in possible_new_states
+        ]
+        return min(scores)
+    
+state = 6
+for take in (1, 2, 3):
+    new_state = state - take
+    score = minimax(new_state, max_turn=False)
+    print(f"Move from {state} to {new_state}: {score}")
+    
+    
+def best_move(state):
+    for take in (1, 2, 3):
+        new_state = state - take
+        score = minimax(new_state, max_turn=False)
+        if score > 0:
+            break
+    return score, new_state
+
+----------------------------------------------------------------------
+
+def possible_new_states(state):
+    return [state - take for take in (1, 2, 3) if take <= state]
+
+def evaluate(state, is_maximizing):
+    if state == 0:
+        return 1 if is_maximizing else -1
+    
+def minimax(state, is_maximizing):
+    if (score := evaluate(state, is_maximizing)) is not None:
+        return score
+
+    if is_maximizing:
+        scores = [
+            minimax(new_state, is_maximizing=False)
+            for new_state in possible_new_states(state)
+        ]
+        return max(scores)
+    else:
+        scores = [
+            minimax(new_state, is_maximizing=True)
+            for new_state in possible_new_states(state)
+        ]
+        return min(scores)
+    
+def best_move(state):
+    for new_state in possible_new_states(state):
+        score = minimax(new_state, is_maximizing=False)
+        if score > 0:
+            break
+    print('score: ',score,' left: ',new_state)
+
+best_move(6)
+
+--------------------------------------------------------------------------
+
+NIM GAME - ALPHA BETA PRUNING
+
+from functools import cache
+
+@cache
+def minimax(state, is_maximizing, alpha=-1, beta=1):
+    if (score := evaluate(state, is_maximizing)) is not None:
+        return score
+
+    scores = []
+    for new_state in possible_new_states(state):
+        scores.append(
+            score := minimax(new_state, not is_maximizing, alpha, beta)
+        )
+        if is_maximizing:
+            alpha = max(alpha, score)
+        else:
+            beta = min(beta, score)
+        if beta <= alpha:
+            break
+    return (max if is_maximizing else min)(scores)
+
+def best_move(state):
+    return max(
+        (minimax(new_state, is_maximizing=False), new_state)
+        for new_state in possible_new_states(state)
+    )
+
+def possible_new_states(state):
+    for pile, counters in enumerate(state):
+        for remain in range(counters):
+            yield state[:pile] + (remain,) + state[pile + 1 :]
+
+def evaluate(state, is_maximizing):
+    if all(counters == 0 for counters in state):
+        return 1 if is_maximizing else -1
+    
+print(best_move((2, 3, 5)))
+
+----------------------------------------------------------------------
+TIC TAC TOE - MINIMAX
+
+player, opponent = 'x', 'o' 
+  
+# This function returns true if there are moves 
+# remaining on the board. It returns false if 
+# there are no moves left to play. 
+def isMovesLeft(board) : 
+  
+    for i in range(3) :
+        for j in range(3) :
+            if (board[i][j] == '_') :
+                return True 
+    return False
+  
+# This is the evaluation function as discussed 
+# in the previous article ( http://goo.gl/sJgv68 ) 
+def evaluate(b) : 
+    
+    # Checking for Rows for X or O victory. 
+    for row in range(3) :     
+        if (b[row][0] == b[row][1] and b[row][1] == b[row][2]) :        
+            if (b[row][0] == player) :
+                return 10
+            elif (b[row][0] == opponent) :
+                return -10
+  
+    # Checking for Columns for X or O victory. 
+    for col in range(3) :
+       
+        if (b[0][col] == b[1][col] and b[1][col] == b[2][col]) :
+          
+            if (b[0][col] == player) : 
+                return 10
+            elif (b[0][col] == opponent) :
+                return -10
+  
+    # Checking for Diagonals for X or O victory. 
+    if (b[0][0] == b[1][1] and b[1][1] == b[2][2]) :
+      
+        if (b[0][0] == player) :
+            return 10
+        elif (b[0][0] == opponent) :
+            return -10
+  
+    if (b[0][2] == b[1][1] and b[1][1] == b[2][0]) :
+      
+        if (b[0][2] == player) :
+            return 10
+        elif (b[0][2] == opponent) :
+            return -10
+  
+    # Else if none of them have won then return 0 
+    return 0
+  
+# This is the minimax function. It considers all 
+# the possible ways the game can go and returns 
+# the value of the board 
+def minimax(board, depth, isMax) : 
+    score = evaluate(board)
+  
+    # If Maximizer has won the game return his/her 
+    # evaluated score 
+    if (score == 10) : 
+        return score
+  
+    # If Minimizer has won the game return his/her 
+    # evaluated score 
+    if (score == -10) :
+        return score
+  
+    # If there are no more moves and no winner then 
+    # it is a tie 
+    if (isMovesLeft(board) == False) :
+        return 0
+  
+    # If this maximizer's move 
+    if (isMax) :     
+        best = -1000 
+  
+        # Traverse all cells 
+        for i in range(3) :         
+            for j in range(3) :
+               
+                # Check if cell is empty 
+                if (board[i][j]=='_') :
+                  
+                    # Make the move 
+                    board[i][j] = player 
+  
+                    # Call minimax recursively and choose 
+                    # the maximum value 
+                    best = max( best, minimax(board,
+                                              depth + 1,
+                                              not isMax) )
+  
+                    # Undo the move 
+                    board[i][j] = '_'
+        return best
+  
+    # If this minimizer's move 
+    else :
+        best = 1000 
+  
+        # Traverse all cells 
+        for i in range(3) :         
+            for j in range(3) :
+               
+                # Check if cell is empty 
+                if (board[i][j] == '_') :
+                  
+                    # Make the move 
+                    board[i][j] = opponent 
+  
+                    # Call minimax recursively and choose 
+                    # the minimum value 
+                    best = min(best, minimax(board, depth + 1, not isMax))
+  
+                    # Undo the move 
+                    board[i][j] = '_'
+        return best
+  
+# This will return the best possible move for the player 
+def findBestMove(board) : 
+    bestVal = -1000 
+    bestMove = (-1, -1) 
+  
+    # Traverse all cells, evaluate minimax function for 
+    # all empty cells. And return the cell with optimal 
+    # value. 
+    for i in range(3) :     
+        for j in range(3) :
+          
+            # Check if cell is empty 
+            if (board[i][j] == '_') : 
+              
+                # Make the move 
+                board[i][j] = player
+  
+                # compute evaluation function for this 
+                # move. 
+                moveVal = minimax(board, 0, False) 
+  
+                # Undo the move 
+                board[i][j] = '_' 
+  
+                # If the value of the current move is 
+                # more than the best value, then update 
+                # best/ 
+                if (moveVal > bestVal) :                
+                    bestMove = (i, j)
+                    bestVal = moveVal
+  
+    print("The value of the best Move is :", bestVal)
+    print()
+    return bestMove
+# Driver code
+board = [
+    [ 'x', 'o', 'x' ], 
+    [ 'o', 'o', 'x' ], 
+    [ '_', '_', '_' ] 
+]
+  
+bestMove = findBestMove(board) 
+  
+print("The Optimal Move is :") 
+print("ROW:", bestMove[0], " COL:", bestMove[1])
+
+--------------------------------------------------------------------
+
+TIC TAC TOE - ALPHA BETA
+
+
+import math
+
+def evaluate(board):
+    # Evaluate the current state of the board
+    # Returns +1 if the computer wins, -1 if the human wins, 0 otherwise
+    # You can modify this function to incorporate different heuristics
+    if any([all(cell == 'X' for cell in row) for row in board]):
+        return -1
+    elif any([all(cell == 'O' for cell in row) for row in board]):
+        return 1
+    elif any([all(board[j][i] == 'X' for j in range(3)) for i in range(3)]):
+        return -1
+    elif any([all(board[j][i] == 'O' for j in range(3)) for i in range(3)]):
+        return 1
+    elif all([board[i][i] == 'X' for i in range(3)]):
+        return -1
+    elif all([board[i][i] == 'O' for i in range(3)]):
+        return 1
+    elif all([board[i][2-i] == 'X' for i in range(3)]):
+        return -1
+    elif all([board[i][2-i] == 'O' for i in range(3)]):
+        return 1
+    else:
+        return 0
+
+def is_full(board):
+    # Check if the board is full
+    return all(cell != ' ' for row in board for cell in row)
+
+def is_terminal(board):
+    # Check if the game has reached a terminal state
+    return evaluate(board) != 0 or is_full(board)
+
+def get_available_moves(board):
+    # Get a list of available moves on the board
+    moves = []
+    for i in range(3):
+        for j in range(3):
+            if board[i][j] == ' ':
+                moves.append((i, j))
+    return moves
+
+def make_move(board, move, player):
+    # Make a move on the board
+    i, j = move
+    board[i][j] = player
+
+def undo_move(board, move):
+    # Undo a move on the board
+    i, j = move
+    board[i][j] = ' '
+
+def minimax(board, depth, alpha, beta, maximizing_player):
+    if is_terminal(board):
+        return evaluate(board)
+
+    if maximizing_player:
+        max_eval = -math.inf
+        for move in get_available_moves(board):
+            make_move(board, move, 'O')
+            eval = minimax(board, depth + 1, alpha, beta, False)
+            undo_move(board, move)
+            max_eval = max(max_eval, eval)
+            alpha = max(alpha, eval)
+            if beta <= alpha:
+                break
+        return max_eval
+    else:
+        min_eval = math.inf
+        for move in get_available_moves(board):
+            make_move(board, move, 'X')
+            eval = minimax(board, depth + 1, alpha, beta, True)
+            undo_move(board, move)
+            min_eval = min(min_eval, eval)
+            beta = min(beta, eval)
+            if beta <= alpha:
+                break
+        return min_eval
+
+def get_best_move(board):
+    best_eval = -math.inf
+    best_move = None
+    for move in get_available_moves(board):
+        make_move(board, move, 'O')
+        eval = minimax(board, 0, -math.inf, math.inf, False)
+        undo_move(board, move)
+    
+    if eval > best_eval:
+            best_eval = eval
+            best_move = move
+    return best_move
+
+def print_board(board):
+    # Print the current state of the board
+    for row in board:
+        print("|".join(row))
+        print("-----")
+
+def play_game():
+    board = [[' ' for _ in range(3)] for _ in range(3)]
+
+    print("Welcome to Tic-Tac-Toe!")
+    print_board(board)
+
+    while not is_terminal(board):
+        if is_full(board):
+            print("It's a tie!")
+            return
+
+        # Human's move
+        while True:
+            row = int(input("Enter the row (0-2): "))
+            col = int(input("Enter the column (0-2): "))
+            if board[row][col] == ' ':
+                make_move(board, (row, col), 'X')
+                break
+            else:
+                print("Invalid move. Try again.")
+
+        print_board(board)
+
+        if is_terminal(board):
+            break
+
+        # Computer's move
+        print("Computer's move:")
+        move = get_best_move(board)
+        make_move(board, move, 'O')
+        print_board(board)
+
+    result = evaluate(board)
+    if result == 1:
+        print("Computer wins!")
+    elif result == -1:
+        print("Human wins!")
+    else:
+        print("It's a tie!")
+
+# Start the game
+play_game()
+
+
+--------------------------------------------------------------------
+
+SWISH - SAMPLE
+
+ller(_Butch).
+married(_Mia,_Marsellus).
+dead(_Zed).
+footmassage(_Mia,_Zed).
+gooddancer(_ABC).
+
+kills(person1,person2):-
+    killer(person1),
+    married(Mia,person1),
+    footmassage(Mia,person2),
+    dead(person2).
+
+loves(_person,Y):-
+    _person =:= _Mia,
+    gooddancer(Y).
+
+eats(_person,Z):-
+    _person =:= _Jules,
+    food(Z,nutritious) + food(Z,tasty).
+-----------------------------------------------------------------
+Q2. All people who are not poor and are smart are happy. Those people who read are smart. John can read and is not poor. Happy people have
+exciting lives. Can anyone be found with an exciting life?
+(a) Represent the statements and rules in prolog
+(b) Answer the query: Who has an exciting life?
+
+
+
+can_read(john).
+not_poor(john).
+
+% Rules
+smart(X) :- can_read(X).
+happy(X) :- not_poor(X), smart(X).
+exciting_life(X) :- happy(X).
+
+-------------------------------------------------------------
